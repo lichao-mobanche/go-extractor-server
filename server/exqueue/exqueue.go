@@ -146,7 +146,7 @@ func (l *exList) Add(r *request.Request) error {
 	defer l.lock.Unlock()
 	// Discard URLs if size limit exceeded
 	if l.MaxSize > 0 && l.size >= l.MaxSize {
-		return global.QueueFullError
+		return global.QueueFullError()
 	}
 	i := &exItem{Request: r}
 	if l.first == nil {
