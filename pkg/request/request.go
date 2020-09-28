@@ -11,13 +11,14 @@ import (
 // Request TODO
 type Request struct {
 	URL     string	`json:"URL" binding:"required"`
-	IfRegexp 	bool	`json:"IfRegexp" binding:"required"`
-	CSSSelectors []string `json:"CSSSelectors,omitempty"`
-	XPathQuerys []string `json:"XPathQuerys,omitempty"`
+	IfRegexp 	bool	`json:"IfRegexp,omitempty"`
+	OnlyHomeSite bool   `json:"OnlyHomeSite,omitempty"`
 	//Content-Type in http header
 	ContentType string	`json:"ContentType" binding:"required"`
 	//base64
 	Content    string	`json:"Content" binding:"required"`
+	CSSSelectors []string `json:"CSSSelectors,omitempty"`
+	XPathQuerys []string `json:"XPathQuerys,omitempty"`
 	AllowedDomains []string `json:"AllowedDomains,omitempty"`
 	DisallowedDomains []string `json:"DisallowedDomains,omitempty"`
 	DisallowedURLFilters []string `json:"DisallowedURLFilters,omitempty"`
@@ -33,6 +34,10 @@ func (r *Request)IsAllowed(u string) bool {
 	parsedURL, err := url.Parse(u)
 	if err != nil {
 		return false
+	}
+	if r.OnlyHomeSite {
+		return parsedURL.Hostname()==r.BaseURL.Hostname()||
+		strings.HasSuffix(parsedURL.Hostname(), "."+r.BaseURL.Hostname())
 	}
 	if len(r.disallowedURLFilters) > 0 {
 		if r.isMatchingFilter(r.disallowedURLFilters, []byte(u)) {
