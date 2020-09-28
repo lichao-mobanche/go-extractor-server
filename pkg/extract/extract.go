@@ -6,6 +6,8 @@ import (
 	"net/url"
 	"encoding/base64"
 	"strings"
+	"regexp"
+	"html"
 	"github.com/lichao-mobanche/go-extractor-server/pkg/request"
 
 	"github.com/PuerkitoBio/goquery"
@@ -32,6 +34,10 @@ func Extract(r *request.Request){
 		return
 	}
 	resp:=request.Response{}
+	if IfRegexp {
+		regexpHandler(r,resp)
+		r.responsec<-resp
+	}
 	switch getFormat(r){
 	case html:
 		if e:=cssHandler(r,resp);e==nil{
@@ -44,8 +50,7 @@ func Extract(r *request.Request){
 		}
 		
 	case xml:
-		resp, e:=xpathHandler(r)
-		if e!=nil{
+		if xpathXmlHandler(r,resp);e!=nil{
 			r.responsec<-e
 		} else {
 			r.responsec<-resp
@@ -56,7 +61,26 @@ func Extract(r *request.Request){
 	return
 }
 
-func cssHandler(r *request.Request, resp request.Response, ) error {
+func regexpHandler(r *request.Request, resp request.Response) {
+	var baseUrlRe = regexp.MustCompile(`(?i)<base\s[^>]*href\s*=\s*[\"\']\s*([^\"\'\s]+)\s*[\"\']`)
+	if m:=baseUrlRe.FindString(r.Content[0:4096]);m!=""{
+		r.baseURL, _ = r.url.Parse(m)
+	}
+
+	var LinksRe = regexp.MustCompile(`(?is)<a\s.*?href=(\"[.#]+?\"|'[.#]+?'|[^\s]+?)(>|\s.*?>)(.*?)<[/ ]?a>`)
+	linksAndTxts := LinksRe.FindAllStringSubmatch(r.Content,-1)
+	links:=make([]string,len(linksAndTxts))
+	for i, l := range linksAndTxts {
+		link:=html.EscapeString(strings.Trim(l[0], "\t\r\n '\"\x0c"))
+		if r.IsAllowed(link) {
+			links[i]=link
+		}
+	}
+	resp["re"]=links
+	return
+}
+
+func cssHandler(r *request.Request, resp request.Response) error {
 	doc, err := goquery.NewDocumentFromReader(bytes.NewBufferString(r.Content))
 	if err != nil {
 		return DocError(err)
@@ -69,7 +93,7 @@ func cssHandler(r *request.Request, resp request.Response, ) error {
 		doc.Find(selector).Each(func(_ int, s *goquery.Selection) {
 			for _, n := range s.Nodes {
 				link:=AbsoluteURL(n.Attr("href"))
-				if link != ""{
+				if link != "" && r.IsAllowed(link){
 					tmpLinks=append(tmpLinks, link)
 				}
 			}
@@ -80,7 +104,7 @@ func cssHandler(r *request.Request, resp request.Response, ) error {
 }
 
 func xpathHtmlHandler(r *request.Request, resp request.Response) error {
-	doc, err := htmlquery.Parse(bytes.NewBuffer(resp.Body))
+	doc, err := htmlquery.Parse(bytes.NewBufferString(r.Content))
 	if err != nil {
 		return DocError(err)
 	}
@@ -95,17 +119,40 @@ func xpathHtmlHandler(r *request.Request, resp request.Response) error {
 	}
 
 	for _, query := range r.XPathQuerys {
+		tmpLinks := make([]string, 0)
 		for _, n := range htmlquery.Find(doc, query) {
-			tmpLinks := make([]string, 0)
 			for _, a := range n.Attr {
 				if a.Key == "href" {
-					link:=AbsoluteURL(n.Attr("href"))
-					if link != ""{
+					link:=AbsoluteURL(a.Val)
+					if link != "" && r.IsAllowed(link){
 						tmpLinks=append(tmpLinks, link)
 					}
 				}
 			}
 		}
+		resp["xpath_"+query]=tmpLinks
+	}
+	return nil
+}
+
+func xpathXmlHandler(r *request.Request, resp request.Response) error {
+	doc, err := xmlquery.Parse(bytes.NewBufferString(r.Content))
+	if err != nil {
+		return err
+	}
+
+	for _, query := range r.XPathQuerys {
+		tmpLinks := make([]string, 0)
+		xmlquery.FindEach(doc, query, func(i int, n *xmlquery.Node) {
+			for _, a := range n.Attr {
+				if a.Name.Local == "href" {
+					link:=AbsoluteURL(a.Val)
+					if link != "" && r.IsAllowed(link){
+						tmpLinks=append(tmpLinks, link)
+					}
+				}
+			}
+		})
 		resp["xpath_"+query]=tmpLinks
 	}
 	return nil
