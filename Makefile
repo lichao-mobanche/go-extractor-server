@@ -37,7 +37,6 @@ LDFLAGS +=  -X "$(VERSIONMOD).gitStatus=$(GIT_STATUS)"
 all: build
 
 .PHONY: build
-build: generate
 build: $(BINDIR)/$(BINNAME)
 $(BINDIR)/$(BINNAME): $(SRC)
 		@echo

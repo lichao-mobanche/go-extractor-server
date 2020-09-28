@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"net/url"
 	"regexp"
+	"strings"
+	"github.com/cfhamlet/os-rq-pod/pkg/sth"
 )
 
 // Request TODO
@@ -17,28 +19,28 @@ type Request struct {
 	//base64
 	Content    string	`json:"Content" binding:"required"`
 	AllowedDomains []string `json:"AllowedDomains,omitempty"`
-	DisallowedDomains []string `json:"DisallowedDomains,omitempty"
+	DisallowedDomains []string `json:"DisallowedDomains,omitempty"`
 	DisallowedURLFilters []string `json:"DisallowedURLFilters,omitempty"`
 	AllowedURLFilters []string `json:"AllowedURLFilters,omitempty"`
 	disallowedURLFilters []*regexp.Regexp
 	allowedURLFilters []*regexp.Regexp
-	url	*url.URL
-	baseURL *url.URL
-	responsec	chan interface{}
+	UrlParsed	*url.URL
+	BaseURL *url.URL
+	Responsec	chan interface{}
 }
 
 func (r *Request)IsAllowed(u string) bool {
-	
-	if parsedURL, err := url.Parse(u);err != nil {
+	parsedURL, err := url.Parse(u)
+	if err != nil {
 		return false
 	}
 	if len(r.disallowedURLFilters) > 0 {
-		if isMatchingFilter(r.disallowedURLFilters, []byte(u)) {
+		if r.isMatchingFilter(r.disallowedURLFilters, []byte(u)) {
 			return false
 		}
 	}
 	if len(r.allowedURLFilters) > 0 {
-		if !isMatchingFilter(r.allowedURLFilters, []byte(u)) {
+		if !r.isMatchingFilter(r.allowedURLFilters, []byte(u)) {
 			return false
 		}
 	}
@@ -76,10 +78,10 @@ func (r *Request) AbsoluteURL(u string) string {
 		return ""
 	}
 	var base *url.URL
-	if r.baseURL != nil {
-		base = r.baseURL
+	if r.BaseURL != nil {
+		base = r.BaseURL
 	} else {
-		base = r.url
+		base = r.UrlParsed
 	}
 	absURL, err := base.Parse(u)
 	if err != nil {
@@ -87,7 +89,7 @@ func (r *Request) AbsoluteURL(u string) string {
 	}
 	absURL.Fragment = ""
 	if absURL.Scheme == "//" {
-		absURL.Scheme = r.url.Scheme
+		absURL.Scheme = r.UrlParsed.Scheme
 	}
 	return absURL.String()
 }
@@ -97,8 +99,8 @@ func (r *Request) UnmarshalJSON(b []byte) error {
 	type Tmp Request
 	err := json.Unmarshal(b, (*Tmp)(r))
 	if err ==nil{
-		r.responsec=make(chan interface{},1)
-		r.url, err = url.Parse(r.URL)
+		r.Responsec=make(chan interface{},1)
+		r.UrlParsed, err = url.Parse(r.URL)
 		if(len(r.DisallowedURLFilters)>0){
 			r.disallowedURLFilters=make([]*regexp.Regexp, len(r.DisallowedURLFilters))
 			for i, f := range r.DisallowedURLFilters{
@@ -121,4 +123,4 @@ func (r *Request) UnmarshalJSON(b []byte) error {
 }
 
 // Response TODO
-type Response map[string]interface{}
+type Response sth.Result

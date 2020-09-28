@@ -1,5 +1,7 @@
 package extract
 
+import "fmt"
+
 // ContentEmptyError TODO
 type ContentEmptyError string
 

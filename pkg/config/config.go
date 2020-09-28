@@ -2,10 +2,7 @@ package config
 
 import (
 	"fmt"
-	"os"
 	"strings"
-
-	"encoding/json"
 
 	"github.com/spf13/viper"
 )

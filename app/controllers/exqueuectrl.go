@@ -1,8 +1,11 @@
 package controllers
 
 import (
+	"fmt"
+
 	"github.com/lichao-mobanche/go-extractor-server/server/exqueue"
 	"github.com/lichao-mobanche/go-extractor-server/pkg/request"
+	"github.com/cfhamlet/os-rq-pod/pkg/sth"
 	"github.com/gin-gonic/gin"
 )
 // ExQueueController TODO
@@ -16,21 +19,21 @@ func NewExQueueController(e *exqueue.ExQueue) *ExQueueController {
 }
 
 // ExtractLinks TODO
-func (ctrl *ExQueueController) ExtractLinks(c *gin.Context) (res request.Response, err error){
+func (ctrl *ExQueueController) ExtractLinks(c *gin.Context) (res sth.Result, err error){
 
 	var req *request.Request = &request.Request{}
 	if err = c.ShouldBindJSON(req); err != nil {
 		err = InvalidBody(fmt.Sprintf("%s", err))
 		return
 	}
-	exq.AddRequest(req)
+	ctrl.exq.AddRequest(req)
 
-	resorerr=<-req.responsec
-	switch(resorerr.(type)){
+	resorerr:=<-req.Responsec
+	switch resorerr.(type) {
 	case error:
 		err=resorerr.(error)
 	case request.Response:
-		res=resorerr.(request.Response)
+		res=resorerr.(sth.Result)
 	}
 	
 	return

@@ -43,7 +43,7 @@ func New(conf *viper.Viper) (*ExQueue, error){
 	}
 	return &ExQueue{
 		workerNumber,
-		&exList{MaxSize: maxQueueNum},
+		&exList{lock:&sync.RWMutex{} ,MaxSize: maxQueueNum},
 		nil,
 		sync.Mutex{},
 		make(chan struct{}),
@@ -146,7 +146,7 @@ func (l *exList) Add(r *request.Request) error {
 	defer l.lock.Unlock()
 	// Discard URLs if size limit exceeded
 	if l.MaxSize > 0 && l.size >= l.MaxSize {
-		return global.QueueFullError()
+		return global.QueueFullError(r.URL)
 	}
 	i := &exItem{Request: r}
 	if l.first == nil {

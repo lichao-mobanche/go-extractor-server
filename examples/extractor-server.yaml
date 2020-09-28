@@ -1,0 +1,8 @@
+http:
+  addr: "0.0.0.0:7890"
+  api:
+    path: "api"
+
+limit:
+  http:
+    size: 1048576
