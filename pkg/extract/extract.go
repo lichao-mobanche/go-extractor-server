@@ -89,6 +89,9 @@ func regexpHandler(r *request.Request, resp request.Response) {
 }
 
 func cssHandler(r *request.Request, resp request.Response) error {
+	if len(r.CSSSelectors)==0{
+		return nil
+	}
 	doc, err := goquery.NewDocumentFromReader(bytes.NewBufferString(r.Content))
 	if err != nil {
 		return DocError(err.Error())
