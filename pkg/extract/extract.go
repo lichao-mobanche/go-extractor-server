@@ -28,6 +28,7 @@ const (
 
 // Extract extract links
 func Extract(r *request.Request){
+	
 	c, e := base64.StdEncoding.DecodeString(r.Content)
 	if e!=nil {
 		r.Responsec<-Base64Error(e.Error())
@@ -53,7 +54,6 @@ func Extract(r *request.Request){
 		if e!=nil {
 			r.Responsec<-e
 		}
-		
 	case xml:
 		if xpathXmlHandler(r,resp);e!=nil{
 			r.Responsec<-e
@@ -68,15 +68,18 @@ func Extract(r *request.Request){
 
 func regexpHandler(r *request.Request, resp request.Response) {
 	var baseUrlRe = regexp.MustCompile(`(?i)<base\s[^>]*href\s*=\s*[\"\']\s*([^\"\'\s]+)\s*[\"\']`)
-	if m:=baseUrlRe.FindString(r.Content[0:4096]);m!=""{
+	var l int
+	if l=len(r.Content);l>4096{
+		l=4096
+	}
+	if m:=baseUrlRe.FindString(r.Content[0:l]);m!=""{
 		r.BaseURL, _ = r.UrlParsed.Parse(m)
 	}
-
 	var LinksRe = regexp.MustCompile(`(?is)<a\s.*?href=(\"[.#]+?\"|'[.#]+?'|[^\s]+?)(>|\s.*?>)(.*?)<[/ ]?a>`)
 	linksAndTxts := LinksRe.FindAllStringSubmatch(r.Content,-1)
 	links:=make([]string,len(linksAndTxts))
 	for i, l := range linksAndTxts {
-		link:=xhtml.EscapeString(strings.Trim(l[0], "\t\r\n '\"\x0c"))
+		link:=xhtml.EscapeString(strings.Trim(l[1], "\t\r\n '\"\x0c"))
 		if r.IsAllowed(link) {
 			links[i]=link
 		}
@@ -126,7 +129,21 @@ func xpathHtmlHandler(r *request.Request, resp request.Response) error {
 			}
 		}
 	}
-
+	if len(r.XPathQuerys)==0{
+		tmpLinks := make([]string, 0)
+		for _, n := range htmlquery.Find(doc, "//a") {
+			for _, a := range n.Attr {
+				if a.Key == "href" {
+					link:=r.AbsoluteURL(a.Val)
+					if link != "" && r.IsAllowed(link){
+						tmpLinks=append(tmpLinks, link)
+					}
+				}
+			}
+		}
+		resp["xpath"]=tmpLinks
+		return nil
+	}
 	for _, query := range r.XPathQuerys {
 		tmpLinks := make([]string, 0)
 		for _, n := range htmlquery.Find(doc, query) {
@@ -148,6 +165,21 @@ func xpathXmlHandler(r *request.Request, resp request.Response) error {
 	doc, err := xmlquery.Parse(bytes.NewBufferString(r.Content))
 	if err != nil {
 		return err
+	}
+	if len(r.XPathQuerys)==0{
+		tmpLinks := make([]string, 0)
+		xmlquery.FindEach(doc, "//a", func(i int, n *xmlquery.Node) {
+			for _, a := range n.Attr {
+				if a.Name.Local == "href" {
+					link:=r.AbsoluteURL(a.Value)
+					if link != "" && r.IsAllowed(link){
+						tmpLinks=append(tmpLinks, link)
+					}
+				}
+			}
+		})
+		resp["xpath"]=tmpLinks
+		return nil
 	}
 
 	for _, query := range r.XPathQuerys {
@@ -213,7 +245,7 @@ func fixCharset(r *request.Request) error {
 	if err != nil {
 		return EncodeError(err.Error())
 	}
-	r.ContentType = string(tmpContent)
+	r.Content = string(tmpContent)
 	return nil
 }
 

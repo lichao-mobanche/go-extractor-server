@@ -128,4 +128,4 @@ func (r *Request) UnmarshalJSON(b []byte) error {
 }
 
 // Response TODO
-type Response sth.Result
+type Response=sth.Result

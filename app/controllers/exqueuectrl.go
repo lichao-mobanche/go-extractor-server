@@ -33,7 +33,7 @@ func (ctrl *ExQueueController) ExtractLinks(c *gin.Context) (res sth.Result, err
 	case error:
 		err=resorerr.(error)
 	case request.Response:
-		res=resorerr.(sth.Result)
+		res=resorerr.(request.Response)
 	}
 	
 	return
