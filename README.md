@@ -30,7 +30,7 @@
 |参数|含义|
 | ---- | ---- | ---- |
 |re|正则提链结果|string[]|
-|xpath[_*]|xpath提链结果|string[]|
+|xpath|xpath提链结果|string[]|
 |css|css提链结果|string[]|
 |re|正则提链结果|string[]|
 |re|正则提链结果|string[]|
