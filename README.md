@@ -15,6 +15,8 @@ extractor-server run -c examples/extractor-server.yaml
 
 ## 请求格式
 
+http+json
+
 |参数|含义|类型|是否必需|
 | ---- | ---- | ---- | ---- |
 |URL|请求url|string|Y|
