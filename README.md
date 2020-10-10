@@ -1,5 +1,9 @@
 # go-extractor-server
-
+## 基本使用
+#### 编译
+make build
+#### 运行
+extractor-server run -c examples/extractor-server.yaml
 ## 基础功能
 * 正则提链
 * css提链
