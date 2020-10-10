@@ -36,8 +36,6 @@ extractor-server run -c examples/extractor-server.yaml
 |re|正则提链结果|string[]|
 |xpath|xpath提链结果|string[]|
 |css|css提链结果|string[]|
-|re|正则提链结果|string[]|
-|re|正则提链结果|string[]|
 
 ## 性能
 测试中
