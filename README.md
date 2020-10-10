@@ -25,9 +25,15 @@
 |AllowedURLFilters|pattern黑名单|string[]|N|
 |DisallowedURLFilters|pattern黑名单|string[]|N|
 
-## 请求格式
+## 返回格式
+
 |参数|含义|
 | ---- | ---- | ---- |
-|||
+|re|正则提链结果|string[]|
+|xpath[_*]|xpath提链结果|string[]|
+|css|css提链结果|string[]|
+|re|正则提链结果|string[]|
+|re|正则提链结果|string[]|
+
 ## 方向
 * 抽取器
