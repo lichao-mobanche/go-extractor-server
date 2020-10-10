@@ -5,6 +5,7 @@ import (
 	"net/url"
 	"regexp"
 	"strings"
+	"errors"
 	"github.com/cfhamlet/os-rq-pod/pkg/sth"
 )
 
@@ -36,8 +37,8 @@ func (r *Request)IsAllowed(u string) bool {
 		return false
 	}
 	if r.OnlyHomeSite {
-		return parsedURL.Hostname()==r.BaseURL.Hostname()||
-		strings.HasSuffix(parsedURL.Hostname(), "."+r.BaseURL.Hostname())
+		return parsedURL.Hostname()==r.UrlParsed.Hostname()||
+		strings.HasSuffix(parsedURL.Hostname(), "."+r.UrlParsed.Hostname())
 	}
 	if len(r.disallowedURLFilters) > 0 {
 		if r.isMatchingFilter(r.disallowedURLFilters, []byte(u)) {
@@ -54,7 +55,7 @@ func (r *Request)IsAllowed(u string) bool {
 
 func (r *Request) isDomainAllowed(domain string) bool {
 	for _, d2 := range r.DisallowedDomains {
-		if d2 == domain {
+		if d2 == domain || strings.HasSuffix(domain, "."+d2) {
 			return false
 		}
 	}
@@ -62,7 +63,7 @@ func (r *Request) isDomainAllowed(domain string) bool {
 		return true
 	}
 	for _, d2 := range r.AllowedDomains {
-		if d2 == domain {
+		if d2 == domain || strings.HasSuffix(domain, "."+d2) {
 			return true
 		}
 	}
@@ -88,8 +89,9 @@ func (r *Request) AbsoluteURL(u string) string {
 	} else {
 		base = r.UrlParsed
 	}
+	u= strings.TrimSpace(u)
 	absURL, err := base.Parse(u)
-	if err != nil {
+	if err != nil || absURL.Host==""{
 		return ""
 	}
 	absURL.Fragment = ""
@@ -105,7 +107,9 @@ func (r *Request) UnmarshalJSON(b []byte) error {
 	err := json.Unmarshal(b, (*Tmp)(r))
 	if err ==nil{
 		r.Responsec=make(chan interface{},1)
-		r.UrlParsed, err = url.Parse(r.URL)
+		if r.UrlParsed, err = url.Parse(r.URL);err ==nil&&r.UrlParsed.Host==""{
+			err = errors.New("empty host")
+		}
 		if(len(r.DisallowedURLFilters)>0){
 			r.disallowedURLFilters=make([]*regexp.Regexp, len(r.DisallowedURLFilters))
 			for i, f := range r.DisallowedURLFilters{

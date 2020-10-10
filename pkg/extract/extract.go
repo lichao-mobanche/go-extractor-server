@@ -43,6 +43,7 @@ func Extract(r *request.Request){
 	if r.IfRegexp {
 		regexpHandler(r,resp)
 		r.Responsec<-resp
+		return
 	}
 	switch getFormat(r){
 	case html:
@@ -77,11 +78,13 @@ func regexpHandler(r *request.Request, resp request.Response) {
 	}
 	var LinksRe = regexp.MustCompile(`(?is)<a\s.*?href=(\"[.#]+?\"|'[.#]+?'|[^\s]+?)(>|\s.*?>)(.*?)<[/ ]?a>`)
 	linksAndTxts := LinksRe.FindAllStringSubmatch(r.Content,-1)
-	links:=make([]string,len(linksAndTxts))
-	for i, l := range linksAndTxts {
+	links:=make([]string,0)
+	
+	for _, l := range linksAndTxts {
 		link:=xhtml.EscapeString(strings.Trim(l[1], "\t\r\n '\"\x0c"))
-		if r.IsAllowed(link) {
-			links[i]=link
+		link=r.AbsoluteURL(link)
+		if link!= "" && r.IsAllowed(link) {
+			links=append(links, link)
 		}
 	}
 	resp["re"]=links
