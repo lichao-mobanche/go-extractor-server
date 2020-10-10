@@ -39,5 +39,8 @@ extractor-server run -c examples/extractor-server.yaml
 |re|正则提链结果|string[]|
 |re|正则提链结果|string[]|
 
-## 方向
+## 性能
+测试中
+
+## 未来方向
 * 抽取器
