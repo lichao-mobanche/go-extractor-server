@@ -15,6 +15,8 @@ extractor-server run -c examples/extractor-server.yaml
 
 ## 请求格式
 
+http+json
+
 |参数|含义|类型|是否必需|
 | ---- | ---- | ---- | ---- |
 |URL|请求url|string|Y|
@@ -36,8 +38,6 @@ extractor-server run -c examples/extractor-server.yaml
 |re|正则提链结果|string[]|
 |xpath|xpath提链结果|string[]|
 |css|css提链结果|string[]|
-|re|正则提链结果|string[]|
-|re|正则提链结果|string[]|
 
 ## 性能
 测试中
