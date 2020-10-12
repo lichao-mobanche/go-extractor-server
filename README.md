@@ -4,6 +4,12 @@
 make build
 #### 运行
 extractor-server run -c examples/extractor-server.yaml
+#### 配置
+|参数|含义|类型|是否必需|
+| ---- | ---- | ---- | ---- |
+|worker.number|工作线程数|int|默认工作线程数为4|
+|queue.number|队列中缓存请求数量|int|默认为4000，请求数量过多会返回429错误码|
+|http.addr|地址和端口|string|默认端口7890|
 ## 基础功能
 * 正则提链
 * css提链
