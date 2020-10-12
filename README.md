@@ -6,7 +6,7 @@ make build
 #### 运行
 extractor-server run -c examples/extractor-server.yaml
 #### 配置
-建议将工作线程数配置为cpu核数
+建议将工作线程数配置为 cpu核数-1
 |参数|含义|类型|是否必需|
 | ---- | ---- | ---- | ---- |
 |worker.number|工作线程数|int|默认工作线程数为4|
