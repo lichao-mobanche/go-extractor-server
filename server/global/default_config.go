@@ -1,7 +1,7 @@
 package global
 
 // EnvPrefix for env
-const EnvPrefix = "EX_"
+const EnvPrefix = "ex"
 
 // DefaultConfig TODO
 var DefaultConfig = map[string]interface{}{
