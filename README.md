@@ -56,3 +56,6 @@ http+json
 
 ## 未来方向
 * 抽取器
+
+## License
+MIT licensed.
