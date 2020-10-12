@@ -1,4 +1,5 @@
 # go-extractor-server
+该项目提供提链服务，使用http+json与外界交互，灵活配置工作线程数量，使用简单方便。
 ## 基本使用
 #### 编译
 make build
