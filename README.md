@@ -17,6 +17,7 @@ extractor-server run -c examples/extractor-server.yaml
 * css提链
 * xpath提链
 * 只提取本站
+* 自动去除锚点
 * 提链黑白名单(domain, pattern)
 * 支持xml、html格式文本
 * 适配多种编码方式
@@ -47,7 +48,9 @@ http+json
 |xpath|xpath提链结果|string[]|
 |css|css提链结果|string[]|
 
-## 性能
+## 性能(非正则提链)
+非正则提链快于正则提链
+
 测试页面 https://www.sohu.com/ 单请求平均耗时与客户端数量/工作线程数成正相关
 |客户端数量/请求总量|工作线程数|qps|单请求平均耗时|
 | ---- | ---- | ---- | ---- |
