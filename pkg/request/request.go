@@ -2,43 +2,43 @@ package request
 
 import (
 	"encoding/json"
+	"errors"
+	"github.com/cfhamlet/os-rq-pod/pkg/sth"
 	"net/url"
 	"regexp"
 	"strings"
-	"errors"
-	"github.com/cfhamlet/os-rq-pod/pkg/sth"
 )
 
 // Request TODO
 type Request struct {
-	URL     string	`json:"URL" binding:"required"`
-	IfRegexp 	bool	`json:"IfRegexp,omitempty"`
+	URL          string `json:"URL" binding:"required"`
+	IfRegexp     bool   `json:"IfRegexp,omitempty"`
 	OnlyHomeSite bool   `json:"OnlyHomeSite,omitempty"`
 	//Content-Type in http header
-	ContentType string	`json:"ContentType" binding:"required"`
+	ContentType string `json:"ContentType" binding:"required"`
 	//base64
-	Content    string	`json:"Content" binding:"required"`
-	CSSSelectors []string `json:"CSSSelectors,omitempty"`
-	XPathQuerys []string `json:"XPathQuerys,omitempty"`
-	AllowedDomains []string `json:"AllowedDomains,omitempty"`
-	DisallowedDomains []string `json:"DisallowedDomains,omitempty"`
+	Content              string   `json:"Content" binding:"required"`
+	CSSSelectors         []string `json:"CSSSelectors,omitempty"`
+	XPathQuerys          []string `json:"XPathQuerys,omitempty"`
+	AllowedDomains       []string `json:"AllowedDomains,omitempty"`
+	DisallowedDomains    []string `json:"DisallowedDomains,omitempty"`
 	DisallowedURLFilters []string `json:"DisallowedURLFilters,omitempty"`
-	AllowedURLFilters []string `json:"AllowedURLFilters,omitempty"`
+	AllowedURLFilters    []string `json:"AllowedURLFilters,omitempty"`
 	disallowedURLFilters []*regexp.Regexp
-	allowedURLFilters []*regexp.Regexp
-	UrlParsed	*url.URL
-	BaseURL *url.URL
-	Responsec	chan interface{}
+	allowedURLFilters    []*regexp.Regexp
+	UrlParsed            *url.URL
+	BaseURL              *url.URL
+	Responsec            chan interface{}
 }
 
-func (r *Request)IsAllowed(u string) bool {
+func (r *Request) IsAllowed(u string) bool {
 	parsedURL, err := url.Parse(u)
 	if err != nil {
 		return false
 	}
 	if r.OnlyHomeSite {
-		return parsedURL.Hostname()==r.UrlParsed.Hostname()||
-		strings.HasSuffix(parsedURL.Hostname(), "."+r.UrlParsed.Hostname())
+		return parsedURL.Hostname() == r.UrlParsed.Hostname() ||
+			strings.HasSuffix(parsedURL.Hostname(), "."+r.UrlParsed.Hostname())
 	}
 	if len(r.disallowedURLFilters) > 0 {
 		if r.isMatchingFilter(r.disallowedURLFilters, []byte(u)) {
@@ -89,9 +89,9 @@ func (r *Request) AbsoluteURL(u string) string {
 	} else {
 		base = r.UrlParsed
 	}
-	u= strings.TrimSpace(u)
+	u = strings.TrimSpace(u)
 	absURL, err := base.Parse(u)
-	if err != nil || absURL.Host==""{
+	if err != nil || absURL.Host == "" {
 		return ""
 	}
 	absURL.Fragment = ""
@@ -105,24 +105,24 @@ func (r *Request) AbsoluteURL(u string) string {
 func (r *Request) UnmarshalJSON(b []byte) error {
 	type Tmp Request
 	err := json.Unmarshal(b, (*Tmp)(r))
-	if err ==nil{
-		r.Responsec=make(chan interface{},1)
-		if r.UrlParsed, err = url.Parse(r.URL);err ==nil&&r.UrlParsed.Host==""{
+	if err == nil {
+		r.Responsec = make(chan interface{}, 1)
+		if r.UrlParsed, err = url.Parse(r.URL); err == nil && r.UrlParsed.Host == "" {
 			err = errors.New("empty host")
 		}
-		if(len(r.DisallowedURLFilters)>0){
-			r.disallowedURLFilters=make([]*regexp.Regexp, len(r.DisallowedURLFilters))
-			for i, f := range r.DisallowedURLFilters{
-				if r.disallowedURLFilters[i],err=regexp.Compile(f);err!=nil{
+		if len(r.DisallowedURLFilters) > 0 {
+			r.disallowedURLFilters = make([]*regexp.Regexp, len(r.DisallowedURLFilters))
+			for i, f := range r.DisallowedURLFilters {
+				if r.disallowedURLFilters[i], err = regexp.Compile(f); err != nil {
 					return err
 				}
 			}
 		}
 
-		if(len(r.AllowedURLFilters)>0){
-			r.allowedURLFilters=make([]*regexp.Regexp, len(r.AllowedURLFilters))
-			for i, f := range r.AllowedURLFilters{
-				if r.allowedURLFilters[i],err=regexp.Compile(f);err!=nil{
+		if len(r.AllowedURLFilters) > 0 {
+			r.allowedURLFilters = make([]*regexp.Regexp, len(r.AllowedURLFilters))
+			for i, f := range r.AllowedURLFilters {
+				if r.allowedURLFilters[i], err = regexp.Compile(f); err != nil {
 					return err
 				}
 			}
@@ -132,4 +132,4 @@ func (r *Request) UnmarshalJSON(b []byte) error {
 }
 
 // Response TODO
-type Response=sth.Result
+type Response = sth.Result

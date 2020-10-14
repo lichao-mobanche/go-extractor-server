@@ -1,14 +1,14 @@
 package command
 
 import (
-	"github.com/cfhamlet/os-rq-pod/pkg/runner"
-	"github.com/cfhamlet/os-rq-pod/pkg/ginserv"
 	"github.com/cfhamlet/os-rq-pod/pkg/command"
-	"github.com/lichao-mobanche/go-extractor-server/pkg/config"
-	"github.com/lichao-mobanche/go-extractor-server/server/global"
-	"github.com/lichao-mobanche/go-extractor-server/server/exqueue"
+	"github.com/cfhamlet/os-rq-pod/pkg/ginserv"
+	"github.com/cfhamlet/os-rq-pod/pkg/runner"
 	"github.com/lichao-mobanche/go-extractor-server/app/controllers"
 	"github.com/lichao-mobanche/go-extractor-server/app/routers"
+	"github.com/lichao-mobanche/go-extractor-server/pkg/config"
+	"github.com/lichao-mobanche/go-extractor-server/server/exqueue"
+	"github.com/lichao-mobanche/go-extractor-server/server/global"
 	"github.com/spf13/viper"
 	"go.uber.org/fx"
 )

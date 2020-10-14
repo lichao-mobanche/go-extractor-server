@@ -1,13 +1,13 @@
 package extract
 
 import (
-	"io/ioutil"
 	"bytes"
-	"net/url"
 	"encoding/base64"
-	"strings"
-	"regexp"
 	xhtml "html"
+	"io/ioutil"
+	"net/url"
+	"regexp"
+	"strings"
 
 	"github.com/lichao-mobanche/go-extractor-server/pkg/request"
 
@@ -17,52 +17,53 @@ import (
 	"github.com/saintfish/chardet"
 	"golang.org/x/net/html/charset"
 )
+
 // ContantFormat type
 type ContantFormat int
 
 const (
-	unknown         ContantFormat = iota
-	html       // html
-	xml        // xml
+	unknown ContantFormat = iota
+	html                  // html
+	xml                   // xml
 )
 
 // Extract extract links
-func Extract(r *request.Request){
-	
+func Extract(r *request.Request) {
+
 	c, e := base64.StdEncoding.DecodeString(r.Content)
-	if e!=nil {
-		r.Responsec<-Base64Error(e.Error())
+	if e != nil {
+		r.Responsec <- Base64Error(e.Error())
 		return
 	}
-	r.Content=string(c)
-	if e:=fixCharset(r);e!=nil{
-		r.Responsec<-e
+	r.Content = string(c)
+	if e := fixCharset(r); e != nil {
+		r.Responsec <- e
 		return
 	}
-	resp:=request.Response{}
+	resp := request.Response{}
 	if r.IfRegexp {
-		regexpHandler(r,resp)
-		r.Responsec<-resp
+		regexpHandler(r, resp)
+		r.Responsec <- resp
 		return
 	}
-	switch getFormat(r){
+	switch getFormat(r) {
 	case html:
-		if e:=cssHandler(r,resp);e==nil{
-			if e=xpathHtmlHandler(r,resp);e==nil{
-				r.Responsec<-resp
+		if e := cssHandler(r, resp); e == nil {
+			if e = xpathHtmlHandler(r, resp); e == nil {
+				r.Responsec <- resp
 			}
 		}
-		if e!=nil {
-			r.Responsec<-e
+		if e != nil {
+			r.Responsec <- e
 		}
 	case xml:
-		if xpathXmlHandler(r,resp);e!=nil{
-			r.Responsec<-e
+		if xpathXmlHandler(r, resp); e != nil {
+			r.Responsec <- e
 		} else {
-			r.Responsec<-resp
+			r.Responsec <- resp
 		}
 	default:
-		r.Responsec<-ContentTypeError("unknown")
+		r.Responsec <- ContentTypeError("unknown")
 	}
 	return
 }
@@ -70,29 +71,29 @@ func Extract(r *request.Request){
 func regexpHandler(r *request.Request, resp request.Response) {
 	var baseUrlRe = regexp.MustCompile(`(?i)<base\s[^>]*href\s*=\s*[\"\']\s*([^\"\'\s]+)\s*[\"\']`)
 	var l int
-	if l=len(r.Content);l>4096{
-		l=4096
+	if l = len(r.Content); l > 4096 {
+		l = 4096
 	}
-	if m:=baseUrlRe.FindString(r.Content[0:l]);m!=""{
+	if m := baseUrlRe.FindString(r.Content[0:l]); m != "" {
 		r.BaseURL, _ = r.UrlParsed.Parse(m)
 	}
 	var LinksRe = regexp.MustCompile(`(?is)<a\s.*?href=(\"[.#]+?\"|'[.#]+?'|[^\s]+?)(>|\s.*?>)(.*?)<[/ ]?a>`)
-	linksAndTxts := LinksRe.FindAllStringSubmatch(r.Content,-1)
-	links:=make([]string,0)
-	
+	linksAndTxts := LinksRe.FindAllStringSubmatch(r.Content, -1)
+	links := make([]string, 0)
+
 	for _, l := range linksAndTxts {
-		link:=xhtml.EscapeString(strings.Trim(l[1], "\t\r\n '\"\x0c"))
-		link=r.AbsoluteURL(link)
-		if link!= "" && r.IsAllowed(link) {
-			links=append(links, link)
+		link := xhtml.EscapeString(strings.Trim(l[1], "\t\r\n '\"\x0c"))
+		link = r.AbsoluteURL(link)
+		if link != "" && r.IsAllowed(link) {
+			links = append(links, link)
 		}
 	}
-	resp["re"]=links
+	resp["re"] = links
 	return
 }
 
 func cssHandler(r *request.Request, resp request.Response) error {
-	if len(r.CSSSelectors)==0{
+	if len(r.CSSSelectors) == 0 {
 		return nil
 	}
 	doc, err := goquery.NewDocumentFromReader(bytes.NewBufferString(r.Content))
@@ -108,15 +109,15 @@ func cssHandler(r *request.Request, resp request.Response) error {
 			for _, n := range s.Nodes {
 				for _, a := range n.Attr {
 					if a.Key == "href" {
-						link:=r.AbsoluteURL(a.Val)
-						if link != "" && r.IsAllowed(link){
-							tmpLinks=append(tmpLinks, link)
+						link := r.AbsoluteURL(a.Val)
+						if link != "" && r.IsAllowed(link) {
+							tmpLinks = append(tmpLinks, link)
 						}
 					}
 				}
 			}
 		})
-		resp["css_"+selector]=tmpLinks
+		resp["css_"+selector] = tmpLinks
 	}
 	return nil
 }
@@ -135,19 +136,19 @@ func xpathHtmlHandler(r *request.Request, resp request.Response) error {
 			}
 		}
 	}
-	if len(r.XPathQuerys)==0{
+	if len(r.XPathQuerys) == 0 {
 		tmpLinks := make([]string, 0)
-		for _, n := range htmlquery.Find(doc, "//a") {
+		for _, n := range htmlquery.Find(doc, "//a|//area") {
 			for _, a := range n.Attr {
 				if a.Key == "href" {
-					link:=r.AbsoluteURL(a.Val)
-					if link != "" && r.IsAllowed(link){
-						tmpLinks=append(tmpLinks, link)
+					link := r.AbsoluteURL(a.Val)
+					if link != "" && r.IsAllowed(link) {
+						tmpLinks = append(tmpLinks, link)
 					}
 				}
 			}
 		}
-		resp["xpath"]=tmpLinks
+		resp["xpath"] = tmpLinks
 		return nil
 	}
 	for _, query := range r.XPathQuerys {
@@ -155,14 +156,14 @@ func xpathHtmlHandler(r *request.Request, resp request.Response) error {
 		for _, n := range htmlquery.Find(doc, query) {
 			for _, a := range n.Attr {
 				if a.Key == "href" {
-					link:=r.AbsoluteURL(a.Val)
-					if link != "" && r.IsAllowed(link){
-						tmpLinks=append(tmpLinks, link)
+					link := r.AbsoluteURL(a.Val)
+					if link != "" && r.IsAllowed(link) {
+						tmpLinks = append(tmpLinks, link)
 					}
 				}
 			}
 		}
-		resp["xpath_"+query]=tmpLinks
+		resp["xpath_"+query] = tmpLinks
 	}
 	return nil
 }
@@ -172,19 +173,19 @@ func xpathXmlHandler(r *request.Request, resp request.Response) error {
 	if err != nil {
 		return err
 	}
-	if len(r.XPathQuerys)==0{
+	if len(r.XPathQuerys) == 0 {
 		tmpLinks := make([]string, 0)
-		xmlquery.FindEach(doc, "//a", func(i int, n *xmlquery.Node) {
+		xmlquery.FindEach(doc, "//a|//area", func(i int, n *xmlquery.Node) {
 			for _, a := range n.Attr {
 				if a.Name.Local == "href" {
-					link:=r.AbsoluteURL(a.Value)
-					if link != "" && r.IsAllowed(link){
-						tmpLinks=append(tmpLinks, link)
+					link := r.AbsoluteURL(a.Value)
+					if link != "" && r.IsAllowed(link) {
+						tmpLinks = append(tmpLinks, link)
 					}
 				}
 			}
 		})
-		resp["xpath"]=tmpLinks
+		resp["xpath"] = tmpLinks
 		return nil
 	}
 
@@ -193,14 +194,14 @@ func xpathXmlHandler(r *request.Request, resp request.Response) error {
 		xmlquery.FindEach(doc, query, func(i int, n *xmlquery.Node) {
 			for _, a := range n.Attr {
 				if a.Name.Local == "href" {
-					link:=r.AbsoluteURL(a.Value)
-					if link != "" && r.IsAllowed(link){
-						tmpLinks=append(tmpLinks, link)
+					link := r.AbsoluteURL(a.Value)
+					if link != "" && r.IsAllowed(link) {
+						tmpLinks = append(tmpLinks, link)
 					}
 				}
 			}
 		})
-		resp["xpath_"+query]=tmpLinks
+		resp["xpath_"+query] = tmpLinks
 	}
 	return nil
 }
@@ -212,12 +213,12 @@ func xmlFile(u *url.URL) (bool, error) {
 func getFormat(r *request.Request) ContantFormat {
 	res := unknown
 	contentType := strings.ToLower(r.ContentType)
-	if strings.Contains(contentType, "html"){
-		res=html
-	} else if strings.Contains(contentType, "xml"){
-		res=xml
-	} else if isXMLFile, err:=xmlFile(r.UrlParsed);err==nil&&isXMLFile{
-		res=xml
+	if strings.Contains(contentType, "html") {
+		res = html
+	} else if strings.Contains(contentType, "xml") {
+		res = xml
+	} else if isXMLFile, err := xmlFile(r.UrlParsed); err == nil && isXMLFile {
+		res = xml
 	}
 	return res
 }

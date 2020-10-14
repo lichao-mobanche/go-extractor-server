@@ -42,4 +42,4 @@ type DocError string
 
 func (e DocError) Error() string {
 	return fmt.Sprintf("doc load failed %s", string(e))
-} 
+}

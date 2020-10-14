@@ -1,9 +1,8 @@
 package controllers
 
 import (
-	
 	"net/http"
-	
+
 	"github.com/lichao-mobanche/go-extractor-server/server/global"
 )
 

@@ -1,30 +1,29 @@
 package exqueue
 
 import (
-	"sync"
 	"context"
+	"github.com/lichao-mobanche/go-extractor-server/pkg/extract"
 	"github.com/lichao-mobanche/go-extractor-server/pkg/request"
 	"github.com/lichao-mobanche/go-extractor-server/server/global"
-	"github.com/lichao-mobanche/go-extractor-server/pkg/extract"
+	"sync"
 
 	"github.com/spf13/viper"
 )
 
 type ExQueue struct {
-
 	Threads int
 	*exList
-	wake    chan struct{}
-	mut     sync.Mutex // guards wake
-	exitc	chan struct{}
+	wake  chan struct{}
+	mut   sync.Mutex // guards wake
+	exitc chan struct{}
 }
 
 type exList struct {
 	MaxSize int
-	lock *sync.RWMutex
+	lock    *sync.RWMutex
 	size    int
-	first *exItem
-	last *exItem
+	first   *exItem
+	last    *exItem
 }
 
 type exItem struct {
@@ -33,7 +32,7 @@ type exItem struct {
 }
 
 // New creates a new queue
-func New(conf *viper.Viper) (*ExQueue, error){
+func New(conf *viper.Viper) (*ExQueue, error) {
 	var workerNumber, maxQueueNum int
 	if conf.IsSet("worker.number") {
 		workerNumber = conf.GetInt("worker.number")
@@ -43,11 +42,11 @@ func New(conf *viper.Viper) (*ExQueue, error){
 	}
 	return &ExQueue{
 		workerNumber,
-		&exList{lock:&sync.RWMutex{} ,MaxSize: maxQueueNum},
+		&exList{lock: &sync.RWMutex{}, MaxSize: maxQueueNum},
 		nil,
 		sync.Mutex{},
 		make(chan struct{}),
-	},nil
+	}, nil
 }
 
 // AddRequest adds a new Request to the queue
@@ -87,11 +86,11 @@ func (q *ExQueue) run() error {
 
 func (q *ExQueue) loop(requestc chan<- *request.Request, complete <-chan struct{}, errc chan<- error) {
 	var active int
-	
+
 	for {
 		sent := requestc
 		req := q.Get()
-		if req==nil{
+		if req == nil {
 			sent = nil
 		}
 	Sent:
@@ -110,15 +109,15 @@ func (q *ExQueue) loop(requestc chan<- *request.Request, complete <-chan struct{
 					break Sent
 				}
 			case <-q.exitc:
-				if active<=0{
+				if active <= 0 {
 					goto End
 				}
 				q.exitc <- struct{}{}
 			}
 		}
 	}
-	End:
-		errc<-nil
+End:
+	errc <- nil
 }
 
 // OnStart TODO

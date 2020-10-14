@@ -1,9 +1,9 @@
 package routers
 
 import (
-	"github.com/lichao-mobanche/go-extractor-server/app/controllers"
 	"github.com/cfhamlet/os-rq-pod/pkg/ginserv"
 	"github.com/cfhamlet/os-rq-pod/pkg/ginserv/route"
+	"github.com/lichao-mobanche/go-extractor-server/app/controllers"
 )
 
 // RouteExQueueCtrl TODO

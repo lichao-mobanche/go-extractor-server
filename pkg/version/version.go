@@ -3,7 +3,7 @@ package version
 import "strings"
 
 var (
-	version = "development"
+	version   = "development"
 	goVersion string
 	buildTime string
 	gitCommit string
