@@ -17,6 +17,7 @@ extractor-server run -c examples/extractor-server.yaml
 * css提链
 * xpath提链
 * 只提取本站
+* 自动去除锚点
 * 提链黑白名单(domain, pattern)
 * 支持xml、html格式文本
 * 适配多种编码方式
