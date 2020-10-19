@@ -21,6 +21,7 @@ extractor-server run -c examples/extractor-server.yaml
 * 提链黑白名单(domain, pattern)
 * 支持xml、html格式文本
 * 适配多种编码方式
+* 默认提取html、htm、无后缀 链接 
 
 ## 请求格式
 
@@ -39,6 +40,7 @@ http+json
 |DisallowedDomains|domain黑名单|string[]|N|
 |AllowedURLFilters|pattern黑名单|string[]|N|
 |DisallowedURLFilters|pattern黑名单|string[]|N|
+|AllowedExts|被允许的后缀|string[]|N|
 
 ## 返回格式
 
