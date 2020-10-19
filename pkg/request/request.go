@@ -7,8 +7,9 @@ import (
 	"net/url"
 	"regexp"
 	"strings"
+	"path"
 )
-
+var defautExt = [...]string{".html",".htm",""}
 // Request TODO
 type Request struct {
 	URL          string `json:"URL" binding:"required"`
@@ -24,6 +25,7 @@ type Request struct {
 	DisallowedDomains    []string `json:"DisallowedDomains,omitempty"`
 	DisallowedURLFilters []string `json:"DisallowedURLFilters,omitempty"`
 	AllowedURLFilters    []string `json:"AllowedURLFilters,omitempty"`
+	AllowedExts          []string `json:"AllowedExts,omitempty"`
 	disallowedURLFilters []*regexp.Regexp
 	allowedURLFilters    []*regexp.Regexp
 	UrlParsed            *url.URL
@@ -50,7 +52,27 @@ func (r *Request) IsAllowed(u string) bool {
 			return false
 		}
 	}
-	return r.isDomainAllowed(parsedURL.Hostname())
+	if !r.isDomainAllowed(parsedURL.Hostname()) {
+		return false
+	}
+	if urlTExt := path.Ext(parsedURL.Path);!r.isExtAllowed(urlTExt){
+		return false
+	}
+	return true
+}
+
+func (r *Request) isExtAllowed(urlTExt string) bool {
+	for _, defExt := range defautExt {
+		if(defExt==urlTExt){
+			return true
+		}
+	}
+	for _, allExt := range r.AllowedExts {
+		if(allExt==urlTExt){
+			return true
+		}
+	}
+	return false
 }
 
 func (r *Request) isDomainAllowed(domain string) bool {
