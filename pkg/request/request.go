@@ -3,22 +3,59 @@ package request
 import (
 	"encoding/json"
 	"errors"
-	"github.com/cfhamlet/os-rq-pod/pkg/sth"
 	"net/url"
+	"path"
 	"regexp"
 	"strings"
-	"path"
+	pgextract "github.com/Ghamster0/page-extraction/src/extractor"
+	"github.com/cfhamlet/os-rq-pod/pkg/sth"
 )
-var defautExt = [...]string{".html",".htm",""}
+
+// BaseRequest is base request
+type BaseRequest struct {
+	URL         string            `json:"URL" binding:"required"`
+	ContentType string            `json:"ContentType" binding:"required"` //Content-Type in http header
+	Content     string            `json:"Content" binding:"required"`     //base64
+	UrlParsed            *url.URL
+	BaseURL              *url.URL
+	Responsec            chan interface{}
+}
+
+func (b BaseRequest) Url() string {
+	return b.URL
+}
+
+// ExtractRequest is Extract related request
+type ExtractRequest struct {
+	BaseRequest
+	Template    *pgextract.Template `json:"template" binding:"required"`
+	Exfunc      func (*ExtractRequest)
+}
+
+// UnmarshalJSON Deserialization
+func (e *ExtractRequest) UnmarshalJSON(b []byte) error {
+	type Tmp ExtractRequest
+	err := json.Unmarshal(b, (*Tmp)(e))
+	if err == nil {
+		e.Responsec = make(chan interface{}, 1)
+		if e.UrlParsed, err = url.Parse(e.URL); err == nil && e.UrlParsed.Host == "" {
+			err = errors.New("empty host")
+		}
+	}
+	return err
+}
+
+func(e ExtractRequest) Executor(req interface{}){
+	e.Exfunc(req.(*ExtractRequest))
+}
+
+var defautExt = [...]string{".html", ".htm", ""}
+
 // Request TODO
 type Request struct {
-	URL          string `json:"URL" binding:"required"`
-	IfRegexp     bool   `json:"IfRegexp,omitempty"`
-	OnlyHomeSite bool   `json:"OnlyHomeSite,omitempty"`
-	//Content-Type in http header
-	ContentType string `json:"ContentType" binding:"required"`
-	//base64
-	Content              string   `json:"Content" binding:"required"`
+	BaseRequest
+	IfRegexp             bool     `json:"IfRegexp,omitempty"`
+	OnlyHomeSite         bool     `json:"OnlyHomeSite,omitempty"`
 	CSSSelectors         []string `json:"CSSSelectors,omitempty"`
 	XPathQuerys          []string `json:"XPathQuerys,omitempty"`
 	AllowedDomains       []string `json:"AllowedDomains,omitempty"`
@@ -28,9 +65,7 @@ type Request struct {
 	AllowedExts          []string `json:"AllowedExts,omitempty"`
 	disallowedURLFilters []*regexp.Regexp
 	allowedURLFilters    []*regexp.Regexp
-	UrlParsed            *url.URL
-	BaseURL              *url.URL
-	Responsec            chan interface{}
+	Exfunc               func (*Request)
 }
 
 func (r *Request) IsAllowed(u string) bool {
@@ -55,7 +90,7 @@ func (r *Request) IsAllowed(u string) bool {
 	if !r.isDomainAllowed(parsedURL.Hostname()) {
 		return false
 	}
-	if urlTExt := path.Ext(parsedURL.Path);!r.isExtAllowed(urlTExt){
+	if urlTExt := path.Ext(parsedURL.Path); !r.isExtAllowed(urlTExt) {
 		return false
 	}
 	return true
@@ -63,12 +98,12 @@ func (r *Request) IsAllowed(u string) bool {
 
 func (r *Request) isExtAllowed(urlTExt string) bool {
 	for _, defExt := range defautExt {
-		if(defExt==urlTExt){
+		if defExt == urlTExt {
 			return true
 		}
 	}
 	for _, allExt := range r.AllowedExts {
-		if(allExt==urlTExt){
+		if allExt == urlTExt {
 			return true
 		}
 	}
@@ -151,6 +186,10 @@ func (r *Request) UnmarshalJSON(b []byte) error {
 		}
 	}
 	return err
+}
+
+func(e Request) Executor(req interface{}){
+	e.Exfunc(req.(*Request))
 }
 
 // Response TODO
