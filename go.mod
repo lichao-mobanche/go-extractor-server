@@ -4,11 +4,12 @@ go 1.13
 
 require (
 	9fans.net/go v0.0.2 // indirect
-	github.com/PuerkitoBio/goquery v1.5.1
+	github.com/Ghamster0/page-extraction v0.0.0-20201028102714-2d29f44cbb63
+	github.com/PuerkitoBio/goquery v1.6.0
 	github.com/antchfx/htmlquery v1.2.3
 	github.com/antchfx/xmlquery v1.3.2
 	github.com/cfhamlet/os-rq-pod v0.3.1
-	github.com/gin-gonic/gin v1.5.0
+	github.com/gin-gonic/gin v1.6.3
 	github.com/go-delve/delve v1.5.0 // indirect
 	github.com/mdempsky/gocode v0.0.0-20200405233807-4acdcbdea79d // indirect
 	github.com/rogpeppe/godef v1.1.2 // indirect

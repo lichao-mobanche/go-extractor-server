@@ -2,13 +2,16 @@ package exqueue
 
 import (
 	"context"
-	"github.com/lichao-mobanche/go-extractor-server/pkg/extract"
-	"github.com/lichao-mobanche/go-extractor-server/pkg/request"
 	"github.com/lichao-mobanche/go-extractor-server/server/global"
 	"sync"
 
 	"github.com/spf13/viper"
 )
+
+type exRequest interface {
+	Url() string
+	Executor(req interface{})
+}
 
 type ExQueue struct {
 	Threads int
@@ -27,7 +30,7 @@ type exList struct {
 }
 
 type exItem struct {
-	Request *request.Request
+	Request exRequest
 	Next    *exItem
 }
 
@@ -50,12 +53,12 @@ func New(conf *viper.Viper) (*ExQueue, error) {
 }
 
 // AddRequest adds a new Request to the queue
-func (q *ExQueue) AddRequest(r *request.Request) error {
+func (q *ExQueue) AddRequest(r exRequest) error {
 	q.mut.Lock()
 	waken := q.wake != nil
 	q.mut.Unlock()
 	if !waken {
-		return global.QueueUnavailableError(r.URL)
+		return global.QueueUnavailableError(r.Url())
 	}
 	err := q.Add(r)
 	if err != nil {
@@ -74,7 +77,7 @@ func (q *ExQueue) run() error {
 	q.wake = make(chan struct{})
 	q.mut.Unlock()
 
-	requestc := make(chan *request.Request)
+	requestc := make(chan exRequest)
 	complete, errc := make(chan struct{}), make(chan error, 1)
 	for i := 0; i < q.Threads; i++ {
 		go independentRunner(requestc, complete)
@@ -84,7 +87,7 @@ func (q *ExQueue) run() error {
 	return <-errc
 }
 
-func (q *ExQueue) loop(requestc chan<- *request.Request, complete <-chan struct{}, errc chan<- error) {
+func (q *ExQueue) loop(requestc chan<- exRequest, complete <-chan struct{}, errc chan<- error) {
 	var active int
 
 	for {
@@ -132,20 +135,20 @@ func (q *ExQueue) OnStop(ctx context.Context) (err error) {
 	return
 }
 
-func independentRunner(requestc <-chan *request.Request, complete chan<- struct{}) {
+func independentRunner(requestc <-chan exRequest, complete chan<- struct{}) {
 	for req := range requestc {
-		extract.Extract(req)
+		req.Executor(req)
 		complete <- struct{}{}
 	}
 }
 
 // Add add request to exList
-func (l *exList) Add(r *request.Request) error {
+func (l *exList) Add(r exRequest) error {
 	l.lock.Lock()
 	defer l.lock.Unlock()
 	// Discard URLs if size limit exceeded
 	if l.MaxSize > 0 && l.size >= l.MaxSize {
-		return global.QueueFullError(r.URL)
+		return global.QueueFullError(r.Url())
 	}
 	i := &exItem{Request: r}
 	if l.first == nil {
@@ -159,7 +162,7 @@ func (l *exList) Add(r *request.Request) error {
 }
 
 // Get get request from exList
-func (l *exList) Get() *request.Request {
+func (l *exList) Get() exRequest {
 	l.lock.Lock()
 	defer l.lock.Unlock()
 	if l.size == 0 {
