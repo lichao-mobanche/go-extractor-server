@@ -14,7 +14,8 @@ func Extract(r *request.ExtractRequest){
 		return
 	}
 	r.Content = string(c)
-	resp:=pgxtract.Extract(r.URL,r.Content,r.Template)
+	resp := request.Response{}
+	resp["extract"] =pgxtract.Extract(r.URL,r.Content,r.Template)
 	r.Responsec <- resp
 	return
 }

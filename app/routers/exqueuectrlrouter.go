@@ -11,7 +11,7 @@ func RouteExQueueCtrl(root ginserv.RouterGroup, ctrl *controllers.ExQueueControl
 	g := root.Group("/")
 	routes := []*route.Route{
 		route.New(g.POST, "/", ctrl.ExtractLinks),
-		route.New(g.POST, "/", ctrl.Extract),
+		route.New(g.POST, "/extract/", ctrl.Extract),
 	}
 	route.Bind(routes, controllers.ErrorCode)
 }
