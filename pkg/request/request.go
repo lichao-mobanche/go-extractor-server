@@ -49,7 +49,7 @@ func(e ExtractRequest) Executor(req interface{}){
 	e.Exfunc(req.(*ExtractRequest))
 }
 
-var defautExt = [...]string{".html", ".htm", ""}
+var defautExt = [...]string{".aspx", ".html", ".htm",".php", ""}
 
 // Request TODO
 type Request struct {
