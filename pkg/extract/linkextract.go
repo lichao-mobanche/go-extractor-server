@@ -3,17 +3,17 @@ package extract
 import (
 	"bytes"
 	"encoding/base64"
+	nethtml "golang.org/x/net/html"
 	xhtml "html"
 	"io/ioutil"
 	"net/url"
 	"regexp"
 	"strings"
-	"fmt"
 
-	"github.com/lichao-mobanche/go-extractor-server/pkg/request"
 	"github.com/PuerkitoBio/goquery"
 	"github.com/antchfx/htmlquery"
 	"github.com/antchfx/xmlquery"
+	"github.com/lichao-mobanche/go-extractor-server/pkg/request"
 	"github.com/saintfish/chardet"
 	"golang.org/x/net/html/charset"
 )
@@ -34,7 +34,7 @@ func LinkExtract(r *request.Request) {
 		r.Responsec <- Base64Error(e.Error())
 		return
 	}
-	
+
 	r.Content = string(c)
 	if e := fixCharset(r); e != nil {
 		r.Responsec <- e
@@ -48,8 +48,8 @@ func LinkExtract(r *request.Request) {
 	}
 	switch getFormat(r) {
 	case html:
-		if  len(r.CSSSelectors) > 0 {
-			if e = cssHandler(r, resp); e == nil{
+		if len(r.CSSSelectors) > 0 {
+			if e = cssHandler(r, resp); e == nil {
 				r.Responsec <- resp
 				return
 			}
@@ -109,28 +109,31 @@ func cssHandler(r *request.Request, resp request.Response) error {
 	if href, found := doc.Find("base[href]").Attr("href"); found {
 		r.BaseURL, _ = r.UrlParsed.Parse(href)
 	}
-	
+
 	for _, selector := range r.CSSSelectors {
 		tmpLinks := make([]string, 0)
-		// fmt.Print(selector)
 		doc.Find(selector).Each(func(_ int, s *goquery.Selection) {
-			for _, n := range s.Nodes {
-				for _, a := range n.Attr {
-					if a.Key == "href" {
-						
-						link := r.AbsoluteURL(a.Val)
-						fmt.Print(link,"/n")
-						if link != "" && r.IsAllowed(link) {
-							fmt.Print("kkkkkkk",link)
-							tmpLinks = append(tmpLinks, link)
+			f := func(_ int, s *goquery.Selection) {
+				for _, n := range s.Nodes {
+					for _, a := range n.Attr {
+						if a.Key == "href" {
+							link := r.AbsoluteURL(a.Val)
+							if link != "" && r.IsAllowed(link) {
+								tmpLinks = append(tmpLinks, link)
+							}
 						}
 					}
 				}
 			}
+			if goquery.NodeName(s) == "a" {
+				f(0, s)
+			} else {
+				s.Find("a").Each(
+					f,
+				)
+			}
 		})
-		fmt.Print("ddddd",tmpLinks)
 		resp["css_"+selector] = tmpLinks
-		fmt.Print(resp)
 	}
 	return nil
 }
@@ -167,12 +170,21 @@ func xpathHtmlHandler(r *request.Request, resp request.Response) error {
 	for _, query := range r.XPathQuerys {
 		tmpLinks := make([]string, 0)
 		for _, n := range htmlquery.Find(doc, query) {
-			for _, a := range n.Attr {
-				if a.Key == "href" {
-					link := r.AbsoluteURL(a.Val)
-					if link != "" && r.IsAllowed(link) {
-						tmpLinks = append(tmpLinks, link)
+			f := func(node *nethtml.Node) {
+				for _, a := range node.Attr {
+					if a.Key == "href" {
+						link := r.AbsoluteURL(a.Val)
+						if link != "" && r.IsAllowed(link) {
+							tmpLinks = append(tmpLinks, link)
+						}
 					}
+				}
+			}
+			if n.Data == "a" {
+				f(n)
+			} else {
+				for _, n := range htmlquery.Find(n, "//a") {
+					f(n)
 				}
 			}
 		}
@@ -205,14 +217,24 @@ func xpathXmlHandler(r *request.Request, resp request.Response) error {
 	for _, query := range r.XPathQuerys {
 		tmpLinks := make([]string, 0)
 		xmlquery.FindEach(doc, query, func(i int, n *xmlquery.Node) {
-			for _, a := range n.Attr {
-				if a.Name.Local == "href" {
-					link := r.AbsoluteURL(a.Value)
-					if link != "" && r.IsAllowed(link) {
-						tmpLinks = append(tmpLinks, link)
+			f := func(node *xmlquery.Node) {
+				for _, a := range node.Attr {
+					if a.Name.Local == "href" {
+						link := r.AbsoluteURL(a.Value)
+						if link != "" && r.IsAllowed(link) {
+							tmpLinks = append(tmpLinks, link)
+						}
 					}
 				}
 			}
+			if n.Data == "a" {
+				f(n)
+			} else {
+				xmlquery.FindEach(n, "//a", func(_ int, n *xmlquery.Node) {
+					f(n)
+				})
+			}
+
 		})
 		resp["xpath_"+query] = tmpLinks
 	}
