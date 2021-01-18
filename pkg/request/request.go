@@ -49,7 +49,20 @@ func(e ExtractRequest) Executor(req interface{}){
 	e.Exfunc(req.(*ExtractRequest))
 }
 
-var defautExt = [...]string{".aspx", ".html", ".htm",".php", ""}
+var ignoredExt = map[string]struct{}{
+	".7z":struct{}{}, ".7zip":struct{}{}, ".bz2":struct{}{}, ".rar":struct{}{}, ".tar":struct{}{}, ".tar.gz":struct{}{}, ".xz":struct{}{}, ".zip":struct{}{},
+	".mng":struct{}{}, ".pct":struct{}{}, ".bmp":struct{}{}, ".gif":struct{}{}, ".jpg":struct{}{}, ".jpeg":struct{}{}, ".png":struct{}{}, ".pst":struct{}{},
+	".psp":struct{}{}, ".tif":struct{}{}, ".tiff":struct{}{}, ".ai":struct{}{}, ".drw":struct{}{}, ".dxf":struct{}{}, ".eps":struct{}{}, ".ps":struct{}{},
+	".svg":struct{}{}, ".cdr":struct{}{}, ".ico":struct{}{},
+	".mp3":struct{}{}, ".wma":struct{}{}, ".ogg":struct{}{}, ".wav":struct{}{}, ".ra":struct{}{}, ".aac":struct{}{}, ".mid":struct{}{}, ".au":struct{}{},
+	".aiff":struct{}{}, ".3gp":struct{}{}, ".asf":struct{}{}, ".asx":struct{}{}, ".avi":struct{}{}, ".mov":struct{}{}, ".mp4":struct{}{}, ".mpg":struct{}{},
+	".qt":struct{}{}, ".rm":struct{}{}, ".swf":struct{}{}, ".wmv":struct{}{}, ".m4a":struct{}{}, ".m4v":struct{}{}, ".flv":struct{}{}, ".webm":struct{}{},
+	".xls":struct{}{}, ".xlsx":struct{}{}, ".ppt":struct{}{}, ".pptx":struct{}{}, ".pps":struct{}{}, ".doc":struct{}{}, ".docx":struct{}{}, ".odt":struct{}{},
+	".ods":struct{}{}, ".odg":struct{}{}, ".odp":struct{}{}, 
+	".css":struct{}{}, ".pdf":struct{}{}, ".exe":struct{}{}, ".bin":struct{}{}, ".rss":struct{}{}, ".dmg":struct{}{}, ".iso":struct{}{}, ".apk":struct{}{},
+
+
+}
 
 // Request TODO
 type Request struct {
@@ -97,17 +110,15 @@ func (r *Request) IsAllowed(u string) bool {
 }
 
 func (r *Request) isExtAllowed(urlTExt string) bool {
-	for _, defExt := range defautExt {
-		if defExt == urlTExt {
-			return true
-		}
-	}
 	for _, allExt := range r.AllowedExts {
 		if allExt == urlTExt {
 			return true
 		}
 	}
-	return false
+	if _, ok := ignoredExt[urlTExt];ok{
+		return false
+	}
+	return true
 }
 
 func (r *Request) isDomainAllowed(domain string) bool {
