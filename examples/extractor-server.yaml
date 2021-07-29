@@ -5,4 +5,4 @@ http:
 
 limit:
   http:
-    size: 1048576
+    size: 104857600
